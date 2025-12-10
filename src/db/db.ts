@@ -4,7 +4,7 @@ import { logger } from "../lib/logger.js";
 
 export const pool = new Pool({
   host: env.DB_HOST,
-  port: Number(env.PORT),
+  port: Number(env.DB_PORT),
   database: env.DB_NAME,
   user: env.DB_USER,
   password: env.DB_PASSWORD,
@@ -18,7 +18,7 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   return result;
 }
 
-export async function assetDatabaseConnection() {
+export async function assertDatabaseConnection() {
   try {
     await pool.query("SELECT 1;");
     logger.info("Connected to postgres");
