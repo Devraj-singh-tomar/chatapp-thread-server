@@ -35,7 +35,7 @@ userRouter.get("/", async (req, res, next) => {
     const profile = await getUserFromClerk(auth.userId);
     const response = toResponse(profile);
 
-    res.json(response);
+    res.json({ data: response });
   } catch (error) {
     next(error);
   }
