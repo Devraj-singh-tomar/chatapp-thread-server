@@ -1,4 +1,7 @@
-import { upsertUserFromClerkProfile } from "./user.repository.js";
+import {
+  repoUpdateUserProfile,
+  upsertUserFromClerkProfile,
+} from "./user.repository.js";
 import type { UserProfileType } from "./user.types.js";
 import { clerkClient } from "@clerk/express";
 
@@ -39,6 +42,53 @@ export async function getUserFromClerk(
 
   return {
     user,
+    clerkEmail: email,
+    clerkFullName: fullName,
+  };
+}
+
+export async function updateUserProfile(params: {
+  clerkUserId: string;
+  displayName?: string;
+  handle?: string;
+  bio?: string;
+  avatarUrl?: string;
+}): Promise<UserProfileType> {
+  // const { clerkUserId, avatarUrl, bio, displayName, handle } = params;
+
+  // const updatedUser = await repoUpdateUserProfile({
+  //   clerkUserId,
+  //   displayName,
+  //   handle,
+  //   bio,
+  //   avatarUrl,
+  // });
+
+  const { clerkUserId } = params;
+
+  const updateData: {
+    clerkUserId: string;
+    displayName?: string;
+    handle?: string;
+    bio?: string;
+    avatarUrl?: string;
+  } = { clerkUserId };
+
+  if (params.displayName !== undefined)
+    updateData.displayName = params.displayName;
+
+  if (params.handle !== undefined) updateData.handle = params.handle;
+
+  if (params.bio !== undefined) updateData.bio = params.bio;
+
+  if (params.avatarUrl !== undefined) updateData.avatarUrl = params.avatarUrl;
+
+  const updatedUser = await repoUpdateUserProfile(updateData);
+
+  const { fullName, email } = await fetchClerkProfile(clerkUserId);
+
+  return {
+    user: updatedUser,
     clerkEmail: email,
     clerkFullName: fullName,
   };

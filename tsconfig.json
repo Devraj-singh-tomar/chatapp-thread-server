@@ -12,7 +12,7 @@
     "declaration": true,
     "declarationMap": true,
     "resolveJsonModule": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
