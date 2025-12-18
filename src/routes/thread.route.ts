@@ -75,8 +75,6 @@ threadRouter.post("/threads/:threadId", async (req, res, next) => {
     const thread = await getThreadById(threadId);
 
     res.json({ data: thread });
-
-    res.json({ data: thread });
   } catch (error) {
     next(error);
   }
