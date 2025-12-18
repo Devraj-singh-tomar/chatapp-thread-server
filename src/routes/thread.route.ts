@@ -4,6 +4,8 @@ import {
   createThread,
   getThreadById,
   listCategories,
+  listThreads,
+  parseThreadListFilter,
 } from "../modules/threads/threads.repository.js";
 import { BadRequestError, UnauthorizedError } from "../lib/errors.js";
 import { z } from "zod";
@@ -75,6 +77,24 @@ threadRouter.post("/threads/:threadId", async (req, res, next) => {
     res.json({ data: thread });
 
     res.json({ data: thread });
+  } catch (error) {
+    next(error);
+  }
+});
+
+threadRouter.get("/threads", async (req, res, next) => {
+  try {
+    const filter = parseThreadListFilter({
+      page: req.query.page,
+      pageSize: req.query.pageSize,
+      category: req.query.category,
+      q: req.query.q,
+      sort: req.query.sort,
+    });
+
+    const extractListOfThreads = await listThreads(filter);
+
+    res.json({ data: extractListOfThreads });
   } catch (error) {
     next(error);
   }
