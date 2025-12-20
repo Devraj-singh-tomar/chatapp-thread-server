@@ -133,7 +133,7 @@ export async function getThreadById(id: number): Promise<ThreadDetail> {
 export async function listThreads(
   filter: ThreadListFilter
 ): Promise<ThreadSummary[]> {
-  const { page, pageSize, sort, categorySlug, search } = filter;
+  const { page, pageSize, categorySlug, sort, search } = filter;
 
   const conditions: string[] = [];
 
@@ -142,7 +142,7 @@ export async function listThreads(
   let idx = 1;
 
   if (categorySlug) {
-    conditions.push(`c.slug = ${idx++}`);
+    conditions.push(`c.slug = $${idx++}`);
     params.push(categorySlug);
   }
 
