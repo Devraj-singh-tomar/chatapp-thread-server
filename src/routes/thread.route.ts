@@ -10,6 +10,12 @@ import {
 import { BadRequestError, UnauthorizedError } from "../lib/errors.js";
 import { z } from "zod";
 import { getUserFromClerk } from "../modules/users/user.service.js";
+import {
+  createReply,
+  deleteReplyById,
+  findReplyAuthor,
+  listRepliesForThread,
+} from "../modules/threads/replies.repository.js";
 
 export const threadRouter = Router();
 
@@ -95,5 +101,87 @@ threadRouter.get("/threads", async (req, res, next) => {
     res.json({ data: extractListOfThreads });
   } catch (error) {
     next(error);
+  }
+});
+
+//  Replies and like endpoints
+
+threadRouter.get("/threads/:threadId/replies", async (req, res, next) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth.userId) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const threadId = Number(req.params.threadId);
+    const replies = await listRepliesForThread(threadId);
+
+    res.json({ data: replies });
+  } catch (err) {
+    next(err);
+  }
+});
+
+threadRouter.post("/threads/:threadId/replies", async (req, res, next) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth.userId) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const threadId = Number(req.params.threadId);
+
+    if (!Number.isInteger(threadId) || threadId <= 0) {
+      throw new BadRequestError("Invalid thread Id");
+    }
+
+    const bodyRaw = typeof req.body?.body === "string" ? req.body.body : "";
+
+    if (bodyRaw.trim().length <= 2) {
+      throw new BadRequestError("Reply is too short!");
+    }
+
+    const profile = await getUserFromClerk(auth.userId);
+
+    const reply = await createReply({
+      threadId,
+      authorUserId: profile.user.id,
+      body: bodyRaw,
+    });
+
+    // // notification -> trigger here but later
+
+    res.status(201).json({ data: reply });
+  } catch (err) {
+    next(err);
+  }
+});
+
+threadRouter.delete("/replies/:replyId", async (req, res, next) => {
+  try {
+    const auth = getAuth(req);
+
+    if (!auth.userId) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const replyId = Number(req.params.replyId);
+
+    if (!Number.isInteger(replyId) || replyId <= 0) {
+      throw new BadRequestError("Invalid replyId");
+    }
+
+    const profile = await getUserFromClerk(auth.userId);
+    const authorUserId = await findReplyAuthor(replyId);
+
+    if (authorUserId !== profile.user.id) {
+      throw new UnauthorizedError("You can only delete your own replies");
+    }
+
+    await deleteReplyById(replyId);
+
+    res.status(204).send();
+  } catch (e) {
+    next(e);
   }
 });
