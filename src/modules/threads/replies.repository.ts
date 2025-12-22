@@ -1,5 +1,6 @@
 import { query } from "../../db/db.js";
 import { BadRequestError, NotFoundError } from "../../lib/errors.js";
+import { getThreadById } from "./threads.repository.js";
 
 export async function listRepliesForThread(threadId: number) {
   if (!Number.isInteger(threadId) || threadId <= 0) {
@@ -108,4 +109,95 @@ export async function deleteReplyById(replyId: number) {
         `,
     [replyId]
   );
+}
+
+export async function likeThreadOnce(params: {
+  threadId: number;
+  userId: number;
+}) {
+  const { threadId, userId } = params;
+
+  await query(
+    `
+    INSERT INTO thread_reactions (thread_id, user_id)
+    VALUES ($1, $2)
+    ON CONFLICT (thread_id, user_id) DO NOTHING
+    `,
+    [threadId, userId]
+  );
+}
+
+export async function removeThreadOnce(params: {
+  threadId: number;
+  userId: number;
+}) {
+  const { threadId, userId } = params;
+
+  await query(
+    `
+            DELETE FROM thread_reactions
+            WHERE thread_id = $1 AND user_id = $2
+            `,
+    [threadId, userId]
+  );
+}
+
+export async function getThreadDetailsWithCounts(params: {
+  threadId: number;
+  viewerUserId: number | null;
+}) {
+  const { threadId, viewerUserId } = params;
+
+  const thread = await getThreadById(threadId);
+
+  console.log(thread, "threadcheck");
+
+  const likeResult = await query(
+    `
+        SELECT COUNT(*)::int AS count
+        FROM thread_reactions
+        WHERE thread_id = $1
+        `,
+    [threadId]
+  );
+
+  const likeCount = (likeResult.rows[0]?.count as number | undefined) ?? 0;
+
+  const replyResult = await query(
+    `
+        SELECT COUNT(*)::int AS count
+        FROM replies
+        WHERE thread_id = $1
+        `,
+    [threadId]
+  );
+
+  const replyCount = (replyResult.rows[0]?.count as number | undefined) ?? 0;
+
+  let viewerHasLikedThisPostOrNot = false;
+
+  if (viewerUserId) {
+    const viewerResult = await query(
+      `
+                    SELECT 1
+                    FROM thread_reactions
+                    WHERE thread_id = $1 AND user_id = $2
+                    LIMIT 1
+                    `,
+      [threadId, viewerUserId]
+    );
+
+    const count = viewerResult.rowCount ?? 0;
+
+    if (count > 0) {
+      viewerHasLikedThisPostOrNot = true;
+    }
+  }
+
+  return {
+    ...thread,
+    likeCount,
+    replyCount,
+    viewerHasLikedThisPostOrNot,
+  };
 }
