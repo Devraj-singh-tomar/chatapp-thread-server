@@ -2,7 +2,6 @@ import { Server } from "socket.io";
 import { Server as HttpServer } from "http";
 import { getUserFromClerk } from "../modules/users/user.service.js";
 import { createDirectMessage } from "../modules/chat/chat.service.js";
-import type { BlobOptions } from "buffer";
 
 let io: Server | null = null;
 
